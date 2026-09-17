@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Metro CDMX Linea 3 </title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #F04E99 0%, #333232 100%);
+            color: rgb(0, 0, 0);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            color: #000000;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        h2 {
+            font-size: 1.5rem;
+            color: #000000;
+            margin-bottom: 5px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #ffffff;
+            max-width: 800px;
+            line-height: 1.5;
+        }
+        
+        .scan-section {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+            box-shadow: 0 10px 30px #F54991(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .camera-container {
+            margin: 20px auto;
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+        }
+        
+        #cameraView {
+            width: 100%;
+            height: 300px;
+            border-radius: 15px;
+            background-color: #000;
+            object-fit: cover;
+            display: none;
+        }
+        
+        .camera-placeholder {
+            width: 100%;
+            height: 300px;
+            border-radius: 15px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 3px dashed #F54991;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #565656;
+            font-size: 1.2rem;
+        }
+        
+        .camera-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+        }
+        
+        .scan-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .scan-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70%;
+            height: 40%;
+            border: 3px solid #F54991;
+            border-radius: 10px;
+            animation: pulse-frame 2s infinite;
+        }
+        
+        @keyframes pulse-frame {
+            0% { box-shadow: 0 0 0 0 #F54991 (76, 175, 80, 0.7); }
+            70% { box-shadow: 0 0 0 15px (1, 118, 252, 0.575); }
+            100% { box-shadow: 0 0 0 0 rgba(6, 176, 228, 0); }
+        }
+        
+        .camera-controls {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .camera-button {
+            background: linear-gradient(to right, #F04E99, #F54991);
+            color: #000000;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 160px;
+            justify-content: center;
+        }
+        
+        .camera-button:hover {
+            background: linear-gradient(to right, #F04E99, #F54991);
+            transform: scale(1.05);
+        }
+        
+        .camera-button:active {
+            transform: scale(0.98);
+        }
+        
+        .camera-button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .stop-button {
+            background: linear-gradient(to right, #f44336, #d32f2f);
+        }
+        
+        .stop-button:hover {
+            background: linear-gradient(to right, #d32f2f, #b71c1c);
+        }
+        
+        .demo-button {
+            background: linear-gradient(to right, #4CAF50, #2E7D32);
+        }
+        
+        .demo-button:hover {
+            background: linear-gradient(to right, #2E7D32, #1B5E20);
+        }
+        
+        .status-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            background-color: rgba(0, 0, 0, 0.1);
+            font-size: 1rem;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+        
+        .status-success {
+            background-color: rgba(76, 175, 80, 0.2);
+            color: #a5d6a7;
+        }
+        
+        .status-error {
+            background-color: rgba(255, 43, 28, 0.2);
+            color: #ef9a9a;
+        }
+        
+        .status-scanning {
+            background-color: rgba(33, 150, 243, 0.2);
+            color: #F54991;
+        }
+        
+        .map-section {
+            width: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 1s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .map-container {
+            background-color: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            max-width: 900px;
+            margin-top: 20px;
+        }
+        
+        .map-title {
+            color: #0a0a0a;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+        
+        .map-image {
+            width: 100%;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+        }
+        
+        .instructions {
+            background-color: #565656(0, 0, 0, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            width: 100%;
+            max-width: 900px;
+            text-align: center;
+        }
+        
+        .instructions h3 {
+            color: #000000;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .instructions p {
+            line-height: 1.6;
+            margin-bottom: 15px;
+            color: #000000;
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        
+        .step-number {
+            background-color: #F04E99;
+            color:#f8f5f5;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .back-button {
+            background-color: #F04E99 (255, 255, 255, 0.1);
+            color: #F54991;
+            border: 1px solid rgba(13, 2, 61, 0.705);
+            padding: 12px 30px;
+            font-size: 1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+        }
+        
+        .back-button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .compatibility-notice {
+            background-color: rgba(255, 255, 255, 0.541);
+            border-left: 4px solid #F04E99;
+            padding: 12px;
+            border-radius: 5px;
+            margin-top: 25px;
+            font-size: 0.9rem;
+            color: #000000b2;
+            width: 100%;
+        }
+        
+        .demo-section {
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+        }
+        
+        .qr-instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            text-align: left;
+        }
+        
+        .qr-instructions h4 {
+            color: #000000;
+            margin-bottom: 10px;
+        }
+        
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            color: rgba(0, 0, 0, 0.692);
+            font-size: 0.9rem;
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .scan-section {
+                padding: 20px;
+            }
+            
+            #cameraView, .camera-placeholder {
+                height: 250px;
+            }
+            
+            .map-container, .instructions {
+                padding: 15px;
+            }
+            
+            .camera-icon {
+                font-size: 3rem;
+            }
+            
+            .camera-button {
+                min-width: 140px;
+                padding: 10px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1> Información Del Metro Linea 1 </h1>
+            <p class="subtitle"> Escanea Tu Tarjeta de Movilidad CDMX</p>
+        </header>
+        
+        <section class="scan-section">
+            <h2>Escanear Tarjeta De Movilidad CDMX</h2>
+            <p>Usa la cámara de tu dispositivo para escanear tu tarjeta</p>
+            
+            <div class="camera-container">
+                <div class="camera-placeholder" id="cameraPlaceholder">
+                    <div class="camera-icon">📷</div>
+                    <p>Cámara desactivada</p>
+                </div>
+                <video id="cameraView" playsinline></video>
+                <div class="scan-overlay">
+                    <div class="scan-frame"></div>
+                </div>
+            </div>
+            
+            <div class="camera-controls">
+                <button class="camera-button" id="startCamera">
+                    <span>▶</span> Activar Cámara
+                </button>
+                <button class="camera-button stop-button" id="stopCamera" disabled>
+                    <span>⏹</span> Detener Cámara
+                </button>
+                <button class="camera-button demo-button" id="demoButton">
+                    <span>🔄</span> Modo Demostración
+                </button>
+            </div>
+            
+            <div class="status-message" id="statusMessage">
+                Activa la cámara y enfoca el código QR de tu tarjeta Movilidad CDMX
+            </div>
+            
+            <div class="qr-instructions">
+                <h4>Instrucciones para el escaneo:</h4>
+                <p>1. Activa la cámara con el botón "Activar Cámara"</p>
+                <p>2. Enfoca el código QR de tu tarjeta del Metro dentro del marco verde</p>
+                <p>3. El sistema detectará automáticamente el código QR</p>
+                <p>4. Si no tienes una tarjeta física, usa el "Modo Demostración"</p>
+            </div>
+            
+            <div class="compatibility-notice">
+                <strong>Nota:</strong> Necesitas permitir el acceso a la cámara en tu navegador. 
+                Funciona mejor en dispositivos con cámara trasera de buena calidad.
+            </div>
+        </section>
+        
+        <section class="map-section" id="mapSection">
+            <div class="map-container">
+                <h2 class="map-title"> Información De la Linea 1 </h2>
+                <img src="assets/linea1.jpg" alt="Mapa del Metro Linea 1 CDMX" class="map-image" id="mapImage">
+            </div>
+            
+            <div class="instructions">
+                <h3>Información Del  Linea 1 </h3>
+                <p> La línea 1 del metro de la CDMX es la línea rosa, la más céntrica y va desde Pantitlan hasta Observatorio. Cuenta con 16Km y 654 metros prestando servicio en la ciudad. Pasa por 20 estaciones: 7 de correspondencia, 12 de paso y 1 Terminal. </p>
+                
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>Estación Terminal: Pantitlan </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div> Estación Terminal:  Observatorio </div>
+                </div>
+                
+                <p> lunes a viernes: de 5:00 a 00:00 hrs
+                    Sábado: de 6:00 a 00:00 hrs
+                    Domingo: de 7:00 a 00:00 hrs
+                    El último tren sale de cada terminal a las 23:30 </p>
+                
+                <div class="step" id="cardInfo" style="display: none;">
+                    <div class="step-number">ℹ</div>
+                    <div id="cardData">Información de la tarjeta escaneada aparecerá aquí</div>
+                </div>
+            </div>
+            
+            <button class="back-button" id="backButton">Regresar al Escáner</button>
+        </section>
+        
+        <footer>
+            <p>Proyecto para concurso con mind.js • Sistema de escaneo por cámara de tarjeta del Metro CDMX</p>
+            <p>Uso experimental - Para fines de demostración del concurso</p>
+        </footer>
+    </div>
+
+    <script>
+        // Elementos del DOM
+        const startCameraButton = document.getElementById('startCamera');
+        const stopCameraButton = document.getElementById('stopCamera');
+        const demoButton = document.getElementById('demoButton');
+        const cameraView = document.getElementById('cameraView');
+        const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+        const statusMessage = document.getElementById('statusMessage');
+        const mapSection = document.getElementById('mapSection');
+        const backButton = document.getElementById('backButton');
+        const mapImage = document.getElementById('mapImage');
+        const cardInfo = document.getElementById('cardInfo');
+        const cardData = document.getElementById('cardData');
+        
+        // Variables para control de la cámara
+        let cameraStream = null;
+        let isCameraActive = false;
+        let qrScanner = null;
+        
+        // Verificar compatibilidad con API de cámara
+        function checkCameraSupport() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                statusMessage.textContent = "Tu navegador no soporta acceso a la cámara";
+                statusMessage.className = "status-message status-error";
+                startCameraButton.disabled = true;
+                return false;
+            }
+            return true;
+        }
+        
+        // Activar cámara
+        async function startCamera() {
+            if (!checkCameraSupport()) return;
+            
+            try {
+                // Solicitar permiso para usar la cámara
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment', // Preferir cámara trasera
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                });
+                
+                // Mostrar video de la cámara
+                cameraView.srcObject = cameraStream;
+                cameraView.style.display = 'block';
+                cameraPlaceholder.style.display = 'none';
+                
+                // Esperar a que el video esté listo
+                await cameraView.play();
+                
+                isCameraActive = true;
+                startCameraButton.disabled = true;
+                stopCameraButton.disabled = false;
+                statusMessage.textContent = "Cámara activada. Enfoca el código QR de tu tarjeta del Metro CDMX";
+                statusMessage.className = "status-message status-scanning";
+                
+                // Iniciar detección de códigos QR
+                startQRCodeDetection();
+                
+            } catch (error) {
+                console.error("Error al acceder a la cámara:", error);
+                statusMessage.textContent = "Error al activar la cámara: " + error.message;
+                statusMessage.className = "status-message status-error";
+                isCameraActive = false;
+            }
+        }
+        
+        // Detener cámara
+        function stopCamera() {
+            if (cameraStream) {
+                // Detener todas las pistas de video
+                cameraStream.getTracks().forEach(track => {
+                    track.stop();
+                });
+                cameraStream = null;
+            }
+            
+            if (cameraView.srcObject) {
+                cameraView.srcObject = null;
+            }
+            
+            cameraView.style.display = 'none';
+            cameraPlaceholder.style.display = 'flex';
+            
+            isCameraActive = false;
+            startCameraButton.disabled = false;
+            stopCameraButton.disabled = true;
+            statusMessage.textContent = "Cámara desactivada. Actívala para escanear el código QR";
+            statusMessage.className = "status-message";
+            
+            // Detener detección de QR
+            if (qrScanner) {
+                clearInterval(qrScanner);
+                qrScanner = null;
+            }
+        }
+        
+        // Iniciar detección de códigos QR (simulación)
+        function startQRCodeDetection() {
+            // En un sistema real, aquí usarías una librería como jsQR o QuaggaJS
+            // Para esta demo, simularemos la detección después de un tiempo
+            
+            // Simular que estamos buscando códigos QR
+            let scanAttempts = 0;
+            const maxScanAttempts = 20; // Simular 20 intentos antes de fallar
+            
+            qrScanner = setInterval(() => {
+                if (!isCameraActive) {
+                    clearInterval(qrScanner);
+                    return;
+                }
+                
+                scanAttempts++;
+                
+                // Simular diferentes estados de escaneo
+                if (scanAttempts === 3) {
+                    statusMessage.textContent = "Buscando código QR...";
+                } else if (scanAttempts === 6) {
+                    statusMessage.textContent = "Ajustando enfoque...";
+                } else if (scanAttempts === 9) {
+                    statusMessage.textContent = "Cámara lista para escanear";
+                }
+                
+                // Simular detección exitosa después de cierto tiempo
+                if (scanAttempts >= 10 && scanAttempts <= maxScanAttempts) {
+                    // 30% de probabilidad de detección en cada intento después del intento 10
+                    if (Math.random() < 0.3) {
+                        simulateQRCodeDetected();
+                        clearInterval(qrScanner);
+                        return;
+                    }
+                }
+                
+                // Si llegamos al máximo de intentos sin detectar, sugerir modo demo
+                if (scanAttempts >= maxScanAttempts) {
+                    statusMessage.textContent = "No se detectó código QR. Asegúrate de enfocar bien el código o usa el modo demostración";
+                    statusMessage.className = "status-message status-error";
+                    clearInterval(qrScanner);
+                }
+            }, 500); // Intentar cada 500ms
+        }
+        
+        // Simular que se detectó un código QR
+        function simulateQRCodeDetected() {
+            // Generar datos simulados de tarjeta
+            const cardTypes = ["Tarjeta del Metro CDMX", "Tarjeta Recargable Metro", "Tarjeta Estudiante CDMX"];
+            const cardType = cardTypes[Math.floor(Math.random() * cardTypes.length)];
+            const cardUID = generateCardUID();
+            const balance = (Math.random() * 50 + 5).toFixed(2);
+            const lastUse = new Date().toLocaleDateString('es-MX');
+            const trips = Math.floor(Math.random() * 15);
+            
+            // Mostrar mensaje de éxito
+            statusMessage.textContent = `✓ Código QR detectado: Tarjeta ${cardUID.substring(0, 8)}`;
+            statusMessage.className = "status-message status-success";
+            
+            // Detener cámara
+            stopCamera();
+            
+            
+            // Mostrar el mapa después de un breve retraso
+            setTimeout(() => {
+                showMap();
+            }, 1500);
+        }
+        
+        // Generar un UID de tarjeta simulado
+        function generateCardUID() {
+            const chars = '0123456789ABCDEF';
+            let uid = '';
+            for (let i = 0; i < 16; i++) {
+                uid += chars[Math.floor(Math.random() * chars.length)];
+                if (i % 4 === 3 && i < 15) uid += ':';
+            }
+            return uid;
+        }
+        
+        // Mostrar el mapa del Tren Ligero
+        function showMap() {
+            mapSection.style.display = 'flex';
+            document.querySelector('.scan-section').style.display = 'none';
+            
+            // Efecto de carga de la imagen del mapa
+            mapImage.style.opacity = '0';
+            setTimeout(() => {
+                mapImage.style.transition = 'opacity 1s ease';
+                mapImage.style.opacity = '1';
+            }, 100);
+        }
+        
+        // Función para volver al escáner
+        function goBackToScanner() {
+            mapSection.style.display = 'none';
+            document.querySelector('.scan-section').style.display = 'block';
+            cardInfo.style.display = "none";
+            statusMessage.textContent = "Activa la cámara y enfoca el código QR de tu tarjeta del Metro CDMX";
+            statusMessage.className = "status-message";
+        }
+        
+        // Modo de demostración (sin cámara)
+        function demoMode() {
+            // Detener cámara si está activa
+            if (isCameraActive) {
+                stopCamera();
+            }
+            
+            // Generar datos de demostración
+            const demoData = {
+                cardType: "Tarjeta del Metro CDMX (Modo Demostración)",
+                cardUID: "4A:3B:2C:1D:EF:89:01:23",
+                balance: "24.50",
+                lastUse: new Date().toLocaleDateString('es-MX'),
+                trips: "8"
+            };
+            
+
+            ;
+            
+            statusMessage.textContent = "✓ Modo demostración activado - Tarjeta simulada escaneada";
+            statusMessage.className = "status-message status-success";
+            
+            // Mostrar el mapa después de un breve retraso
+            setTimeout(() => {
+                showMap();
+            }, 800);
+        }
+        
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            // Verificar compatibilidad con cámara
+            checkCameraSupport();
+            
+            // Event Listeners
+            startCameraButton.addEventListener('click', startCamera);
+            stopCameraButton.addEventListener('click', stopCamera);
+            demoButton.addEventListener('click', demoMode);
+            backButton.addEventListener('click', goBackToScanner);
+            
+            // Atajos de teclado
+            document.addEventListener('keydown', (event) => {
+                if (event.code === 'KeyC' && !event.ctrlKey && !isCameraActive) {
+                    event.preventDefault();
+                    startCamera();
+                }
+                
+                if (event.code === 'Escape' && isCameraActive) {
+                    stopCamera();
+                }
+                
+                if (event.code === 'KeyD' && event.ctrlKey) {
+                    event.preventDefault();
+                    demoMode();
+                }
+            });
+            
+            // Detener cámara al salir de la página
+            window.addEventListener('beforeunload', () => {
+                if (isCameraActive) {
+                    stopCamera();
+                }
+            });
+        });
+        
+    </script>
+</body>
+</html>
+
